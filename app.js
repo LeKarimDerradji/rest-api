@@ -119,9 +119,9 @@ app.post('/send_message/:username', async (req, res) => {
   try {
     const srcId = await db.getIdByApiKey(req.apiKey);
     const dstId = await db.getIdByUsername(req.params.username);
-    const content = await req.params.content;
+    const content = await req.body.content;
     const message = await db.sendMessage(srcId, dstId, content);
-    res.json({ status: 'success', data: { message: message, srcId: srcId, dstId: dstId } })
+    res.json({ status: 'success', data: { message: message, src: srcId, dst: dstId, content: content } })
   } catch (e) {
     if (e.status === 'fail') {
       res.status(400).json({ status: e.status, data: e.dataError })

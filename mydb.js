@@ -119,14 +119,17 @@ exports.sendMessage = async (srcId, dstId, content) => {
         content: content,
       },
     })
+    return message;
   } catch (e) {
-    
+    console.log(e)
+    customizeError(e)
+    throw e
   }
 }
 
 exports.getIdByApiKey = async (apiKey) => {
   try {
-    const username = getUserByApiKey(apiKey);
+    const  username  = await this.getUserByApiKey(apiKey);
     return username.id;
   } catch (e) {
     customizeError(e)
@@ -136,8 +139,8 @@ exports.getIdByApiKey = async (apiKey) => {
 
 exports.getIdByUsername = async (username) => {
   try {
-    const username = getUserByUsername(username);
-    return username.id;
+    const  user = await this.getUserByUsername(username);
+    return user.id;
   } catch (e) {
     customizeError(e)
     throw e
