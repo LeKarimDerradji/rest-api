@@ -116,7 +116,20 @@ app.get('/user_by_username/:username', async (req, res) => {
 })
 
 app.post('/send_message/:username', async (req, res) => {
-  // A implementer
+  try {
+    const srcId = await db.getIdByApiKey(req.apiKey);
+    const dstId = await db.getIdByUsername(req.params.username);
+    const content = await req.params.content;
+    const message = await db.sendMessage(srcId, dstId, content);
+    res.json({ status: 'success', data: { message: message, srcId: srcId, dstId: dstId } })
+  } catch (e) {
+    if (e.status === 'fail') {
+      res.status(400).json({ status: e.status, data: e.dataError })
+    } else {
+      // e.status === 50X
+      res.status(500).json({ status: e.status, message: e.message })
+    }
+  }
 })
 
 app.get('/read_message/', async (req, res) => {

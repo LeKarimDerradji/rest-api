@@ -97,9 +97,49 @@ exports.getUserById = async (userId) => {
 }
 
 exports.getUserByUsername = async (username) => {
-  // A implementer
+  try {
+    const result = await prisma.user.findUnique({
+      where: {
+        username: username,
+      },
+    })
+    return result
+  } catch (e) {
+    customizeError(e)
+    throw e
+  }
 }
 
 exports.sendMessage = async (srcId, dstId, content) => {
-  // A Implementer
+  try {
+    const message = await prisma.message.create({
+      data: {
+        srcId: srcId,
+        dstId: dstId,
+        content: content,
+      },
+    })
+  } catch (e) {
+    
+  }
+}
+
+exports.getIdByApiKey = async (apiKey) => {
+  try {
+    const username = getUserByApiKey(apiKey);
+    return username.id;
+  } catch (e) {
+    customizeError(e)
+    throw e
+  }
+}
+
+exports.getIdByUsername = async (username) => {
+  try {
+    const username = getUserByUsername(username);
+    return username.id;
+  } catch (e) {
+    customizeError(e)
+    throw e
+  }
 }
