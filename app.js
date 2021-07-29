@@ -1,5 +1,6 @@
 const crypto = require("crypto");
 const express = require("express");
+const db = require('./mydb')
 const { PrismaClient } = require("@prisma/client");
 
 
@@ -12,63 +13,102 @@ const app = express();
 app.use(express.urlencoded({ extended: false })); // to support URL-encoded bodies
 app.use(express.json()); // to support JSON-encoded bodies
 
-app.post("/register", async (req, res) => {
-  const username = req.body.username;
-  const email = req.body.email;
-  const api_key = crypto.randomUUID();
-  try {
-    const result = await prisma.user.create({
-      data: {
-        username: username,
-        email: email,
-        apiKey: {
-          create: {
-            key: api_key,
-          },
-        },
-      },
-    });
-    console.log(result);
-    res.json({ status: 200, key: api_key });
-  } catch (error) {
-    res.sendStatus(418);
+
+// A middle for checking if an api key is provided by the user
+// If an api key is provided in the authorization header field then
+// the api key is attached to the req object
+const getApiKey = async (req, res, next) => {
+  const apiKey = req.headers.authorization
+  if (!apiKey) {
+    res.status(403).json({
+      status: 'fail',
+      data: { apiKey: 'No api key in Authorization header' },
+    })
+  } else {
+    req.apiKey = apiKey.replace('Bearer ', '').trim()
+    next()
   }
-});
+}
 
-app.delete("/deleteUser/:id", async (req, res) => {
-  const id = Number(req.params.id);
-  console.log(req.params.id);
+// A middleware for checking if an api key is valid
+// and is still active.
+// if Ok the id of the user performing the request is attached to the req object.
+
+const validateApiKey = async (req, res, next) => {
   try {
-    /* const deleteApiKey = await prisma.apiKey.delete({
-      where: {id: id}
-    }) */
-    const deletedUser = await prisma.user.delete({
-      where: { id: id },
-    });
-    res.sendStatus(200);
-  } catch (error) {
-    res.send(error);
-    console.log(error);
+    const result = await db.getUserByApiKey(req.apiKey)
+    // Check if user is active
+    // check if null result then not found
+    if (!result || !result.active) {
+      res.status(403).json({ status: 'fail', data: { key: 'Invalid api key' } })
+    } else {
+      req.userId = result.id
+      next()
+    }
+  } catch (e) {
+    console.log(e)
+    res.status(500).json({ code: 'error', message: 'Internal server error' })
   }
-});
+}
 
-app.post("/send/", async (req, res) => {
-  const srcUser = req.body.username;
-  const destUser = req.body.sendTo;
-  const content = req.body.content;
+app.use(express.urlencoded({ extended: false })) // to support URL-encoded bodies
+app.use(express.json()) // to support JSON-encoded bodies
+
+app.post('/register', async (req, res) => {
+  const username = req.body.username
+  const email = req.body.email
   try {
-    const message = await prisma.message.create({
-      data: {
-        src: { connect: {username: srcUser } },
-        dst: { connect: {username: destUser }},
-        content: content,
-      },
-    });
-    console.log(message);
-    res.json({ status: 200, message: content });
-  } catch (error) {}
-});
+    const result = await db.register(username, email)
+    res.json({
+      status: 'success',
+      data: { id: result.id, key: result.apiKey.key },
+    })
+  } catch (e) {
+    if (e.status === 'fail') {
+      res.status(400).json({ status: e.status, data: e.dataError })
+    } else {
+      // e.status === 50X
+      res.status(500).json({ status: e.status, message: e.message })
+    }
+  }
+})
 
+app.use(getApiKey)
+app.use(validateApiKey)
+
+app.get('/user_by_id/:userId', async (req, res) => {
+  // A implementer
+})
+
+app.get('/myinfo', async (req, res) => {
+  const userId = req.userId
+  try {
+    const result = await db.getUserByApiKey(req.apiKey)
+    // Check if user is active
+    // check if null result then not found
+    if (!result || !result.active) {
+      res.status(403).json({ status: 'fail', data: { key: 'Invalid api key' } })
+    } else {
+      req.userId = result.id
+      next()
+    }
+  } catch (e) {
+    console.log(e)
+    res.status(500).json({ code: 'error', message: 'Internal server error' })
+  }
+})
+
+app.get('/user_by_username/:username', async (req, res) => {
+  // A implementer
+})
+
+app.post('/send_message/:username', async (req, res) => {
+  // A implementer
+})
+
+app.get('/red_message', async (req, res) => {
+  // A implementer
+})
 
 app.listen(PORT, IP, () => {
   console.log(`listening on ${IP}:${PORT}`);
