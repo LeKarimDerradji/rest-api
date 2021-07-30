@@ -147,6 +147,25 @@ exports.readMessages = async (apiKey) => {
   }
 };
 
+exports.readThread = async (apiKey, username) => {
+  try {
+    const username_1 = await this.getUserByApiKey(apiKey);
+    const id_1 = username_1.id;
+    const id_2 = await this.getIdByUsername(username);
+    const messages = await prisma.message.findMany({
+      where: {
+        srcId: id_1,
+        dstId: id_2,
+      },
+    });
+    return messages;
+  } catch (e) {
+    console.log(e);
+    customizeError(e);
+    throw e;
+  }
+}
+
 exports.getIdByApiKey = async (apiKey) => {
   try {
     const username = await this.getUserByApiKey(apiKey);

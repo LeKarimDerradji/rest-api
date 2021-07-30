@@ -3,7 +3,7 @@ const express = require("express");
 const db = require("./mydb");
 const { PrismaClient } = require("@prisma/client");
 
-const IP = "172.30.53.11";
+const IP = "172.25.30.22";
 const PORT = 3333;
 
 const prisma = new PrismaClient();
@@ -112,7 +112,18 @@ app.get("/myinfo", async (req, res) => {
 });
 
 app.get("/user_by_username/:username", async (req, res) => {
-  // A implementer
+  try {
+    console.log(req)
+    const result = await db.getUserByUsername(req.params.username);
+    res.json({ status: "success", data: { user: result } });
+  } catch (e) {
+    if (e.status === "fail") {
+      res.status(400).json({ status: e.status, data: e.dataError });
+    } else {
+      // e.status === 50X
+      res.status(500).json({ status: e.status, message: e.message });
+    }
+  }
 });
 
 app.post("/send_message/:username", async (req, res) => {
@@ -139,6 +150,20 @@ app.get("/read_message/", async (req, res) => {
   try {
     const messages = await db.readMessages(req.apiKey);
     console.log(messages);
+    res.json({ status: "success", data: { messages: messages } });
+  } catch (e) {
+    if (e.status === "fail") {
+      res.status(400).json({ status: e.status, data: e.dataError });
+    } else {
+      // e.status === 50X
+      res.status(500).json({ status: e.status, message: e.message });
+    }
+  }
+});
+
+app.get("/read_thread/:username", async (req, res) => {
+  try {
+    const messages = await db.readThread(req.apiKey, req.params.username);
     res.json({ status: "success", data: { messages: messages } });
   } catch (e) {
     if (e.status === "fail") {
