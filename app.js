@@ -145,7 +145,7 @@ app.post("/send_message/:username", async (req, res) => {
     }
   }
 });
-
+// AND logic to implement
 app.get("/read_message/", async (req, res) => {
   try {
     const messages = await db.readMessages(req.apiKey);
@@ -160,7 +160,7 @@ app.get("/read_message/", async (req, res) => {
     }
   }
 });
-
+// AND logic to implement
 app.get("/read_thread/:username", async (req, res) => {
   try {
     const messages = await db.readThread(req.apiKey, req.params.username);
